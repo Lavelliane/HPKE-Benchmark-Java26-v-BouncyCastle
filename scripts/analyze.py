@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,20 @@ import pandas as pd
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _default_results_root() -> Path:
+    """Linux → results-ubuntu/ so Ubuntu runs do not overwrite macOS results/."""
+    root = _repo_root()
+    env = os.environ.get("HPKE_RESULTS_ROOT")
+    if env:
+        p = Path(env).expanduser()
+        if not p.is_absolute():
+            p = root / p
+        return p.resolve()
+    if sys.platform.startswith("linux"):
+        return root / "results-ubuntu"
+    return root / "results"
 
 
 def _flatten_jmh_entry(entry: dict) -> dict:
@@ -176,18 +191,21 @@ def plot_keygen(df: pd.DataFrame, plots_dir: Path) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Analyze JMH JSON/CSV under results/raw/")
+    results_root = _default_results_root()
+    ap = argparse.ArgumentParser(
+        description="Analyze JMH JSON/CSV under <results-root>/raw/ (see HPKE_RESULTS_ROOT / platform defaults)."
+    )
     ap.add_argument(
         "--raw-dir",
         type=Path,
-        default=_repo_root() / "results" / "raw",
+        default=results_root / "raw",
         help="Directory containing JMH .json and/or .csv outputs",
     )
     ap.add_argument(
         "--plots-dir",
         type=Path,
-        default=_repo_root() / "results" / "plots",
-        help="Output directory for PDF figures",
+        default=results_root / "plots",
+        help="Output directory for figures and LaTeX",
     )
     args = ap.parse_args()
 

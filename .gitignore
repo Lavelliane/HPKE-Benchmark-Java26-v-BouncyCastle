@@ -1,4 +1,7 @@
 target/
+venv/
+.venv/
+*.deb
 .jdks/
 .maven/
 .idea/
@@ -7,3 +10,6 @@ target/
 results/raw/*.json
 results/raw/*.csv
 !results/raw/.gitkeep
+results-ubuntu/raw/*.json
+results-ubuntu/raw/*.csv
+!results-ubuntu/raw/.gitkeep
