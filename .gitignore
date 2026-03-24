@@ -6,6 +6,4 @@ target/
 .DS_Store
 results/raw/*.json
 results/raw/*.csv
-results/plots/*
-!results/plots/.gitkeep
 !results/raw/.gitkeep
