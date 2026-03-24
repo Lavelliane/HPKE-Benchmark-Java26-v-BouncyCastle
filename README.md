@@ -130,6 +130,7 @@ results/raw/                   # macOS default: JMH JSON/CSV (gitignored)
 results/plots/
 results-ubuntu/raw/            # Linux default: same role as results/raw/
 results-ubuntu/plots/
+ubuntu-spec.md                 # hardware/OS snapshot for results-ubuntu host
 ```
 
 ## License / paper

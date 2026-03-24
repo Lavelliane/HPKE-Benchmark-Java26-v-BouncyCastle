@@ -1,6 +1,6 @@
 # Benchmark Results & Interpretation (Ubuntu)
 
-**Platform:** Ubuntu 24.04 LTS, x86\_64, JDK 26, Bouncy Castle 1.83  
+**Platform:** Ubuntu 24.04 LTS, x86\_64, JDK 26, Bouncy Castle 1.83 — **hardware:** see [`ubuntu-spec.md`](../ubuntu-spec.md) in the repo root.  
 **Method:** JMH 1.37, average time (µs/op), GC allocation rate (B/op) via `-prof gc` (`gc.alloc.rate.norm`)  
 **Suites tested:** P-256/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, P-384/SHA-384/AES-256-GCM, X25519/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, X448/SHA-512/AES-256-GCM  
 **Payload sizes (seal/open):** 64 B, 1 KB, 64 KB  
