@@ -1,9 +1,10 @@
-# Benchmark Results & Interpretation
+# Benchmark Results & Interpretation (macOS)
 
 **Platform:** Apple M3 (AArch64), JDK 26 (SunJCE), Bouncy Castle 1.83  
-**Method:** JMH 1.37, average time (µs/op), GC allocation rate (B/op)  
+**Method:** JMH 1.37, average time (µs/op), GC allocation rate (B/op) via `-prof gc` (`gc.alloc.rate.norm`)  
 **Suites tested:** P-256/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, P-384/SHA-384/AES-256-GCM, X25519/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, X448/SHA-512/AES-256-GCM  
-**Payload sizes (seal/open):** 64 B, 1 KB, 64 KB
+**Payload sizes (seal/open):** 64 B, 1 KB, 64 KB  
+**Raw data:** `results/raw/*.json` (not committed; see `.gitignore`). For **Ubuntu x86\_64**, see **`results-ubuntu/result.md`** and `results-ubuntu/plots/memory_allocation_ubuntu.md`.
 
 ---
 

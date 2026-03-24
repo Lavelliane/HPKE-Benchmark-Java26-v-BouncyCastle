@@ -106,8 +106,9 @@ Outputs (under **`$HPKE_RESULTS_ROOT`** when using defaults):
 
 - `<root>/raw/all_results.csv` — flattened scores  
 - `<root>/raw/generate.csv`, `seal.csv`, `open.csv` — per benchmark  
-- `<root>/plots/figure_keygen.png`, `figure_seal_by_payload.png` — 150 dpi  
+- `<root>/plots/figure_keygen.png`, `figure_seal_by_payload.png` — 150 dpi (under **`results-ubuntu/`**, filenames are `figure_keygen_ubuntu.png` and `figure_seal_by_payload_ubuntu.png`)  
 - `<root>/plots/table_seal_1kb.tex` — seal at 1 KB payload  
+- `<root>/plots/memory_allocation.md` or **`memory_allocation_ubuntu.md`** — GC allocation tables (B/op) when JMH was run with `-prof gc`  
 
 Options: `--raw-dir`, `--plots-dir`. Override the default tree with `HPKE_RESULTS_ROOT` (same semantics as `env.sh`).
 

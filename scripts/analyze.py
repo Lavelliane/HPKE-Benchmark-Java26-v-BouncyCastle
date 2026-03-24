@@ -35,6 +35,74 @@ def _default_results_root() -> Path:
     return root / "results"
 
 
+def _png_basename(plots_dir: Path, stem: str) -> str:
+    """Use figure_*_ubuntu.png under .../results-ubuntu/... so plots do not clash with macOS names."""
+    if "results-ubuntu" in plots_dir.resolve().parts:
+        return f"{stem}_ubuntu.png"
+    return f"{stem}.png"
+
+
+def _memory_md_stem(plots_dir: Path) -> str:
+    return "memory_allocation_ubuntu" if "results-ubuntu" in plots_dir.resolve().parts else "memory_allocation"
+
+
+def _md_table_gc(pivot: pd.DataFrame) -> str:
+    lines = [
+        "| Suite | JDK26 (B/op) | BC (B/op) |\n",
+        "|-------|-------------:|----------:|\n",
+    ]
+    for suite in sorted(pivot.index):
+        j = pivot.loc[suite].get("JDK26")
+        b = pivot.loc[suite].get("BC")
+        jv = f"{j:,.0f}" if pd.notna(j) else "—"
+        bv = f"{b:,.0f}" if pd.notna(b) else "—"
+        lines.append(f"| {suite} | {jv} | {bv} |\n")
+    return "".join(lines)
+
+
+def write_memory_allocation_md(df: pd.DataFrame, plots_dir: Path) -> Path | None:
+    """
+    Summarize JMH `gc.alloc.rate.norm` (bytes per invocation) for Keygen + Seal.
+    Written next to figures; under results-ubuntu/ → memory_allocation_ubuntu.md.
+    """
+    if "gc_alloc_rate_norm" not in df.columns:
+        return None
+    sub = df[df["gc_alloc_rate_norm"].notna()].copy()
+    if sub.empty:
+        return None
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    out = plots_dir / f"{_memory_md_stem(plots_dir)}.md"
+    parts: list[str] = [
+        "# Memory allocation (JMH `-prof gc`)\n\n",
+        "Source: secondary metric **`gc.alloc.rate.norm`** — **bytes per benchmark invocation** (B/op).\n\n",
+        "Requires benchmarks run with **`-prof gc`** (see `scripts/run_benchmarks.sh`).\n\n",
+    ]
+    kg = sub[sub["benchmark"].str.contains("KeygenBenchmark", na=False)]
+    if not kg.empty:
+        pivot = kg.pivot_table(
+            index="suite", columns="library", values="gc_alloc_rate_norm", aggfunc="first"
+        )
+        parts.append("## KeygenBenchmark\n\n")
+        parts.append(_md_table_gc(pivot))
+        parts.append("\n")
+    seal = sub[sub["benchmark"].str.contains("SealBenchmark", na=False)]
+    if not seal.empty and "payloadSize" in seal.columns:
+        seal = seal.copy()
+        seal["payloadSize"] = seal["payloadSize"].astype(str)
+        for psz, title in [("64", "64 B"), ("1024", "1 KB"), ("65536", "64 KB")]:
+            chunk = seal[seal["payloadSize"] == psz]
+            if chunk.empty:
+                continue
+            pivot = chunk.pivot_table(
+                index="suite", columns="library", values="gc_alloc_rate_norm", aggfunc="first"
+            )
+            parts.append(f"## SealBenchmark @ {title}\n\n")
+            parts.append(_md_table_gc(pivot))
+            parts.append("\n")
+    out.write_text("".join(parts), encoding="utf-8")
+    return out
+
+
 def _flatten_jmh_entry(entry: dict) -> dict:
     pm = entry.get("primaryMetric") or {}
     params = entry.get("params") or {}
@@ -172,7 +240,7 @@ def plot_seal_by_payload(df: pd.DataFrame, plots_dir: Path) -> None:
         ax.legend(fontsize=7)
     plt.tight_layout()
     plots_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(plots_dir / "figure_seal_by_payload.png", dpi=150, bbox_inches="tight")
+    fig.savefig(plots_dir / _png_basename(plots_dir, "figure_seal_by_payload"), dpi=150, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -186,7 +254,7 @@ def plot_keygen(df: pd.DataFrame, plots_dir: Path) -> None:
     ax.set_title("Key generation latency")
     plt.tight_layout()
     plots_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(plots_dir / "figure_keygen.png", dpi=150, bbox_inches="tight")
+    plt.savefig(plots_dir / _png_basename(plots_dir, "figure_keygen"), dpi=150, bbox_inches="tight")
     plt.close()
 
 
@@ -228,8 +296,12 @@ def main() -> int:
     write_latex_table_seal_1k(df, args.plots_dir / "table_seal_1kb.tex")
     plot_seal_by_payload(df, args.plots_dir)
     plot_keygen(df, args.plots_dir)
+    mem_md = write_memory_allocation_md(df, args.plots_dir)
 
-    print("Wrote:", args.raw_dir / "all_results.csv", args.plots_dir / "figure_seal_by_payload.png")
+    seal_png = args.plots_dir / _png_basename(args.plots_dir, "figure_seal_by_payload")
+    print("Wrote:", args.raw_dir / "all_results.csv", seal_png)
+    if mem_md:
+        print("Wrote:", mem_md)
     return 0
 
 
