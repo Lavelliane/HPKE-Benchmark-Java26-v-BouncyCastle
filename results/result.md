@@ -1,6 +1,6 @@
 # Benchmark Results & Interpretation (macOS)
 
-**Platform:** Apple M3 (AArch64), JDK 26 (SunJCE), Bouncy Castle 1.83  
+**Platform:** Apple M3 MacBook Air (AArch64), JDK 26 (SunJCE), Bouncy Castle 1.83 — **hardware:** see [`macos-spec.md`](../macos-spec.md) in the repo root.
 **Method:** JMH 1.37, average time (µs/op), GC allocation rate (B/op) via `-prof gc` (`gc.alloc.rate.norm`)  
 **Suites tested:** P-256/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, P-384/SHA-384/AES-256-GCM, X25519/SHA-256/{AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305}, X448/SHA-512/AES-256-GCM  
 **Payload sizes (seal/open):** 64 B, 1 KB, 64 KB  
@@ -108,7 +108,7 @@
 | X25519 seal 64 B | 32–34 KB/op | 15–25 KB/op | **BC** |
 | P384 seal 1 KB | 134 KB/op | **1063 KB/op** | **JDK 26** (8× less) |
 | P256 seal 64 KB | 153 KB/op | **412 KB/op** | **JDK 26** |
-| BC X25519 seal 64KB (A256) | 342 µs | **222 KB/op** | context-dependent |
+| X25519 seal 64 KB (A256) | ~98 KB/op | **~222 KB/op** | **JDK 26** |
 
 **Finding:** JDK 26 is substantially more memory-efficient for P-curve operations. BC's P-384 seal allocates ~1 MB/op vs JDK 26's 134 KB — an order of magnitude more. For X25519 at small payloads, BC allocates less, but this reverses at 64 KB where BC's pure-Java AEAD creates large intermediate buffers.
 

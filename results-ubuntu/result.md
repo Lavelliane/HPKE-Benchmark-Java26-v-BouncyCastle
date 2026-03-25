@@ -74,19 +74,48 @@
 
 ## 3. Open (OpenBenchmark)
 
-> **Not included for this Ubuntu run:** `results-ubuntu/raw/OpenBenchmark.json` was missing or empty when this document was last aligned. On macOS (`results/result.md`), Open used a **lighter JMH configuration** (1 fork, 5 iterations) than Seal/Keygen (3 forks, 10 iterations).
+> **Config note:** Open results use a **lighter JMH configuration** (1 fork, 2 warmup, 5 measurement iterations) than Seal/Keygen (3 forks, 5 warmup, 10 measurement). Score errors are therefore wider; treat as indicative.
 
-When Open results exist, mirror the macOS layout:
+### 3a. Small payload (64 B)
 
-### 64 B payload
+| Suite | JDK 26 (µs/op) | BC (µs/op) | BC/JDK ratio |
+|-------|---------------:|-----------:|-------------|
+| P256\_SHA256\_A128 | 692.69 | 117.29 | **0.17× (BC 5.90× faster)** |
+| P256\_SHA256\_A256 | 698.82 | 120.32 | **0.17×** |
+| P256\_SHA256\_CCP | 692.76 | 114.46 | **0.17×** |
+| P384\_SHA384\_A256 | 2455.71 | 372.74 | **0.15× (BC 6.59× faster)** |
+| X25519\_SHA256\_A128 | 186.17 | 65.53 | **0.35× (BC 2.84× faster)** |
+| X25519\_SHA256\_A256 | 185.22 | 65.58 | **0.35×** |
+| X25519\_SHA256\_CCP | 186.31 | 62.42 | **0.34×** |
+| X448\_SHA512\_A256 | 623.27 | 210.93 | **0.34× (BC 2.95× faster)** |
 
-*(No data — run `ph.jhury.hpke.benchmarks.OpenBenchmark` and re-run `scripts/analyze.py`.)*
+### 3b. Medium payload (1 KB)
 
-### 64 KB payload
+| Suite | JDK 26 (µs/op) | BC (µs/op) | BC/JDK ratio |
+|-------|---------------:|-----------:|-------------|
+| P256\_SHA256\_A128 | 693.83 | 122.46 | **0.18×** |
+| P256\_SHA256\_A256 | 691.22 | 124.60 | **0.18×** |
+| P256\_SHA256\_CCP | 697.23 | 118.64 | **0.17×** |
+| P384\_SHA384\_A256 | 2467.65 | 384.99 | **0.16×** |
+| X25519\_SHA256\_A128 | 185.93 | 69.50 | **0.37×** |
+| X25519\_SHA256\_A256 | 187.16 | 70.89 | **0.38×** |
+| X25519\_SHA256\_CCP | 188.87 | 66.73 | **0.35×** |
+| X448\_SHA512\_A256 | 624.15 | 216.12 | **0.35×** |
 
-*(No data.)*
+### 3c. Large payload (64 KB)
 
-**Finding (placeholder):** Once Open JSON is available, expect a pattern similar to Seal: BC ahead at small payloads; JDK 26 competitive or ahead at 64 KB for X25519 AES suites on x86\_64.
+| Suite | JDK 26 (µs/op) | BC (µs/op) | BC/JDK ratio |
+|-------|---------------:|-----------:|-------------|
+| P256\_SHA256\_A128 | 707.71 | 428.37 | **0.61× (BC 1.65× faster)** |
+| P256\_SHA256\_A256 | 705.41 | 490.04 | **0.69×** |
+| P256\_SHA256\_CCP | 791.80 | 453.47 | **0.57×** |
+| P384\_SHA384\_A256 | 2516.64 | 740.84 | **0.29× (BC 3.40× faster)** |
+| X25519\_SHA256\_A128 | 197.35 | 371.64 | **1.88× (JDK 26 1.88× faster)** |
+| X25519\_SHA256\_A256 | 205.03 | 437.10 | **2.13×** |
+| X25519\_SHA256\_CCP | 278.72 | 399.89 | **1.43×** |
+| X448\_SHA512\_A256 | 648.60 | 583.83 | **0.90× (BC slightly ahead)** |
+
+**Finding:** Open mirrors Seal directionally. BC is substantially faster at small/medium payloads (Open removes key encap, so BC's advantage is even larger — e.g. P-256 64 B: BC ~5.9× faster vs ~4.25× for Seal). At **64 KB** the JDK 26 / hardware-AES crossover reappears for **X25519 AES**: JDK **~197–205 µs** vs BC **~372–437 µs** (~1.9–2.1×). **X448** at 64 KB is nearly even (BC marginally ahead). **P-256** at 64 KB still favours BC (~1.6×), consistent with Seal.
 
 ---
 
@@ -160,7 +189,8 @@ Same as macOS: **JUnit** interop tests in the repo confirm cross-library HPKE by
 | Seal latency — P256 | BC (~4×) | **BC** (~1.3–1.4×; ChaCha ~2×) |
 | Seal latency — X25519 AES | BC (~2.1×) | **JDK 26 (~2×)** |
 | Seal latency — X25519 CCP | BC (~2.3×) | JDK 26 (modest) |
-| Open latency — X25519 | *Not measured* | *Not measured* |
+| Open latency — X25519 AES | BC (~2.8×) | **JDK 26 (~1.9–2.1×)** |
+| Open latency — X25519 CCP | BC (~2.9×) | JDK 26 (modest, ~1.4×) |
 | Keygen | BC (~2–5×) | BC (~2–5×) |
 | GC alloc (P-curve) | JDK 26 | **JDK 26** |
 | GC alloc (X-curve small seal) | BC | JDK 26 (AES 64 KB) |
@@ -171,4 +201,4 @@ Same as macOS: **JUnit** interop tests in the repo confirm cross-library HPKE by
 
 ## 8. How this file was produced
 
-Tables §1–§2 match **`results-ubuntu/raw/KeygenBenchmark.json`** and **`SealBenchmark.json`** (JMH primary metric, µs/op). §4 matches **`memory_allocation_ubuntu.md`** from `python3 scripts/analyze.py --raw-dir results-ubuntu/raw --plots-dir results-ubuntu/plots`. After new benchmark runs, regenerate analysis artifacts and update this narrative.
+Tables §1–§3 match **`results-ubuntu/raw/KeygenBenchmark.json`**, **`SealBenchmark.json`**, and **`OpenBenchmark.json`** (JMH primary metric, µs/op). §3 used a lighter run config (1 fork, 2 warmup, 5 measurement iterations). §4 matches **`memory_allocation_ubuntu.md`** from `python3 scripts/analyze.py --raw-dir results-ubuntu/raw --plots-dir results-ubuntu/plots`. After new benchmark runs, regenerate analysis artifacts and update this narrative.
